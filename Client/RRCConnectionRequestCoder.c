@@ -22,29 +22,32 @@ void RRCConnectionRequestCoder(uint8_t **buffer, ssize_t *len){
 
     request->criticalExtensions.present = RRCConnectionRequest__criticalExtensions_PR_rrcConnectionRequest_r8;
 
-    request->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_mo_Signalling;
+    request->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_emergency;
 
-    uint8_t *spare = (uint8_t*)calloc(1, 1);
-    *spare = 0;
-
-    request->criticalExtensions.choice.rrcConnectionRequest_r8.spare.buf = spare;
-    request->criticalExtensions.choice.rrcConnectionRequest_r8.spare.size = 1;
+    const size_t spareElementSize = 5;
+    const size_t spareElementsCount = 2;
+    request->criticalExtensions.choice.rrcConnectionRequest_r8.spare.buf = (uint8_t*)calloc(spareElementsCount, spareElementSize);
+    request->criticalExtensions.choice.rrcConnectionRequest_r8.spare.size = spareElementsCount;
     request->criticalExtensions.choice.rrcConnectionRequest_r8.spare.bits_unused = 0;
 
     request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.present = InitialUE_Identity_PR_randomValue;
 
-    uint8_t *vals = (uint8_t*)calloc(5, 1);
+    const size_t rndValuesCount = 10;
+    uint8_t *values = (uint8_t*)calloc(rndValuesCount, 1);
 
-    for (int i = 0; i < 5; i++){
-        vals[i] = rand() % 256;
+    for (int i = 0; i < rndValuesCount; ++i) {
+        values[i] = rand() % 256;
     }
 
-    request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf = vals;
-    request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.size = 5;
+    request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf = values;
+    request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.size = rndValuesCount;
     request->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.bits_unused = 0;
 
     asn_encode_to_new_buffer_result_t res = {NULL, {0, NULL, NULL}};
     res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_RRCConnectionRequest, request);
+    free(res.buffer);
+    memset(&res, 0, sizeof(res));
+    res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_RRCConnectionRequest, request);
 
     *buffer = res.buffer;
     *len = res.result.encoded;
@@ -56,19 +59,16 @@ void RRCConnectionRequestCoder(uint8_t **buffer, ssize_t *len){
         fprintf(stderr, "Encoded buffer\n");
     }
 
-    xer_fprint(stdout, &asn_DEF_RRCConnectionRequest, request);
-
-    
+    xer_fprint(stdout, &asn_DEF_RRCConnectionRequest, request);    
 }
+
 
 void tx_send(uint8_t **buffer, ssize_t *len) {
     struct sockaddr_in servaddr = {
         servaddr.sin_family = AF_INET,
-        servaddr.sin_port = htons(36412),
-        servaddr.sin_addr.s_addr = inet_addr("127.0.0.99"),
+        servaddr.sin_port = htons(2500),
+        servaddr.sin_addr.s_addr = inet_addr("127.0.0.1"),
     };
-
-    printf("%d", len);
 
     int sockfd;
 
@@ -93,7 +93,7 @@ void tx_send(uint8_t **buffer, ssize_t *len) {
     char resp[BUFFER_SIZE];
     ssize_t valread = read(sockfd, buffer, BUFFER_SIZE);
     if (valread > 0) {
-        printf("Response from server: %s\n", buffer);
+        printf("Response from server: %s\n", *buffer);
     } else {
         printf("No response received from server.\n");
     }
