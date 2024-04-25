@@ -1,18 +1,17 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#include <Attach_coder.h>
+#include "RRCConnectionRequestCoder.h"
 #include <unistd.h>
+#include <time.h>
+
 
 int main() {
+    srand(time(NULL));
+
     uint8_t *buffer;
     ssize_t len;
-    S1SetupRequest_coder(&buffer, &len);
-    tx_send(&buffer, &len);
-    free(buffer);
-
-    usleep(5000);
-    InitialUEMessage_coder(&buffer, &len);
+    RRCConnectionRequestCoder(&buffer, &len);
     tx_send(&buffer, &len);
     free(buffer);
     

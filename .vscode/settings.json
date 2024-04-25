@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "rrcconnectionrequest.h": "c",
+        "asn_set_of.h": "c"
+    }
+}
